@@ -35,14 +35,204 @@ sudo apt install python3-colcon-common-extensions
 #+BEGIN_SRC sh
 
 source /opt/ros/humble/setup.bash
-mkdir microros_ws
-cd microros_ws
+mkdir ~/microros_ws
+cd ~/microros_ws
 git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
 sudo apt update && rosdep update
 rosdep install --from-paths src --ignore-src -y
 colcon build
+
+#+END_SRC
+
+*** Use direnv to automatically source setup file
+
+**** Setup direnv
+
+[[https://direnv.net/]]
+
+**** Create .envrc file
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+echo source /opt/ros/humble/setup.bash > .envrc
+echo source install/local_setup.bash >> .envrc
+direnv allow
+printenv | grep -i ROS
+
+#+END_SRC
+
+** Test micro-ROS application on Linux
+
+*** Create a new firmware workspace
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 run micro_ros_setup create_firmware_ws.sh host
+
+#+END_SRC
+
+*** Build the firmware
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 run micro_ros_setup build_firmware.sh
+
+#+END_SRC
+
+*** Create the micro-ROS agent
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 run micro_ros_setup create_agent_ws.sh
+ros2 run micro_ros_setup build_agent.sh
 source install/local_setup.bash
 
 #+END_SRC
 
+*** Running and testing the micro-ROS app
+
+**** Terminal 0
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
+
+#+END_SRC
+
+**** Terminal 1
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+export RMW_IMPLEMENTATION=rmw_microxrcedds
+ros2 run micro_ros_demos_rclc ping_pong
+
+#+END_SRC
+
+**** Terminal 2
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 topic echo /microROS/ping
+
+#+END_SRC
+
+*** Terminal 3
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 topic echo /microROS/pong
+
+#+END_SRC
+
+*** Terminal 4
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 topic pub --once /microROS/ping std_msgs/msg/Header '{frame_id: "fake_ping"}'
+
+#+END_SRC
+
+** Test micro-ROS application on Zephyr emulator
+
+*** Install the micro-ROS build system
+
+#+BEGIN_SRC sh
+
+source /opt/ros/humble/setup.bash
+rm -rf ~/microros_ws
+mkdir ~/microros_ws
+cd ~/microros_ws
+git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
+colcon build
+echo source /opt/ros/humble/setup.bash > .envrc
+echo source install/local_setup.bash >> .envrc
+direnv allow
+
+#+END_SRC
+
+*** Create a new firmware workspace
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws/
+ros2 run micro_ros_setup create_firmware_ws.sh zephyr host
+
+#+END_SRC
+
+*** Build the firmware
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 run micro_ros_setup build_firmware.sh
+
+#+END_SRC
+
+*** Create the micro-ROS agent
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 run micro_ros_setup create_agent_ws.sh
+ros2 run micro_ros_setup build_agent.sh
+source install/local_setup.bash
+
+#+END_SRC
+
+*** Running and testing the micro-ROS app
+
+**** Terminal 0
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
+
+#+END_SRC
+
+**** Terminal 1
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+export RMW_IMPLEMENTATION=rmw_microxrcedds
+ros2 run micro_ros_demos_rclc ping_pong
+
+#+END_SRC
+
+**** Terminal 2
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 topic echo /microROS/ping
+
+#+END_SRC
+
+*** Terminal 3
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 topic echo /microROS/pong
+
+#+END_SRC
+
+*** Terminal 4
+
+#+BEGIN_SRC sh
+
+cd ~/microros_ws
+ros2 topic pub --once /microROS/ping std_msgs/msg/Header '{frame_id: "fake_ping"}'
+
+#+END_SRC
 
