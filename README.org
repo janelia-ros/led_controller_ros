@@ -8,56 +8,53 @@
 
 * Setup
 
-** Ubuntu 22.04
+** ROS 2 and micro-ROS
 
-*** Install ROS 2 Humble
+*** Install Docker on host machine
 
 #+BEGIN_SRC sh
 
-sudo apt update && sudo apt install locales
-sudo locale-gen en_US en_US.UTF-8
-sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-export LANG=en_US.UTF-8
-sudo apt install software-properties-common
-sudo add-apt-repository universe
-sudo apt update && sudo apt install curl gnupg lsb-release
-sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(source /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-sudo apt install ros-humble-desktop
-sudo apt install python3-rosdep2
-sudo apt-get install python3-pip
-sudo apt install python3-colcon-common-extensions
+sudo apt-get remove docker docker-engine docker.io containerd runc
+sudo apt-get update
+sudo apt-get install \
+     ca-certificates \
+     curl \
+     gnupg \
+     lsb-release -y
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y
+sudo groupadd docker
+sudo usermod -aG docker $USER
 
 #+END_SRC
 
-*** Install the micro-ROS build system
+*** Build Docker Image
 
 #+BEGIN_SRC sh
 
-source /opt/ros/humble/setup.bash
-mkdir ~/microros_ws
-cd ~/microros_ws
-git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
-sudo apt update && rosdep update
-rosdep install --from-paths src --ignore-src -y
-colcon build
+cd led_system_ros
+docker build -f Dockerfile.foxy -t microros:foxy .
 
 #+END_SRC
 
-*** Use direnv to automatically source setup file
-
-**** Setup direnv
-
-[[https://direnv.net/]]
-
-**** Create .envrc file
+*** Run Docker
 
 #+BEGIN_SRC sh
 
-cd ~/microros_ws
-echo source /opt/ros/humble/setup.bash > .envrc
-echo source install/local_setup.bash >> .envrc
-direnv allow
+docker run -it --net=host -v /dev:/dev --privileged microros:foxy
+
+#+END_SRC
+
+*** Test Docker inside container
+
+#+BEGIN_SRC sh
+
+source install/local_setup.bash
 printenv | grep -i ROS
 
 #+END_SRC
@@ -68,7 +65,6 @@ printenv | grep -i ROS
 
 #+BEGIN_SRC sh
 
-cd ~/microros_ws
 ros2 run micro_ros_setup create_firmware_ws.sh host
 
 #+END_SRC
@@ -77,7 +73,6 @@ ros2 run micro_ros_setup create_firmware_ws.sh host
 
 #+BEGIN_SRC sh
 
-cd ~/microros_ws
 ros2 run micro_ros_setup build_firmware.sh
 
 #+END_SRC
@@ -86,7 +81,6 @@ ros2 run micro_ros_setup build_firmware.sh
 
 #+BEGIN_SRC sh
 
-cd ~/microros_ws
 ros2 run micro_ros_setup create_agent_ws.sh
 ros2 run micro_ros_setup build_agent.sh
 source install/local_setup.bash
@@ -141,21 +135,30 @@ ros2 topic pub --once /microROS/ping std_msgs/msg/Header '{frame_id: "fake_ping"
 
 #+END_SRC
 
-** Test micro-ROS application on Zephyr emulator
+** Test micro-ROS application on Zephyr RTOS
 
-*** Install the micro-ROS build system
+*** Use docker to run ROS 2
 
 #+BEGIN_SRC sh
 
-source /opt/ros/humble/setup.bash
-rm -rf ~/microros_ws
-mkdir ~/microros_ws
-cd ~/microros_ws
+docker run -it --net=host -v /dev:/dev --privileged ros:foxy
+
+#+END_SRC
+
+*** Install micro-ROS build system
+
+#+BEGIN_SRC sh
+
+source /opt/ros/$ROS_DISTRO/setup.bash
+mkdir microros_ws
+cd microros_ws
 git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
+sudo apt update && rosdep update
+rosdep install --from-paths src --ignore-src -y
+sudo apt-get install python3-pip
 colcon build
-echo source /opt/ros/humble/setup.bash > .envrc
-echo source install/local_setup.bash >> .envrc
-direnv allow
+source install/local_setup.bash
+sudo apt install curl
 
 #+END_SRC
 
@@ -163,8 +166,7 @@ direnv allow
 
 #+BEGIN_SRC sh
 
-cd ~/microros_ws/
-ros2 run micro_ros_setup create_firmware_ws.sh zephyr host
+ros2 run micro_ros_setup create_firmware_ws.sh zephyr olimex-stm32-e407
 
 #+END_SRC
 
@@ -236,3 +238,29 @@ ros2 topic pub --once /microROS/ping std_msgs/msg/Header '{frame_id: "fake_ping"
 
 #+END_SRC
 
+** Test micro-ROS using Teensy with Arudino
+
+*** Use docker to run ROS 2
+
+#+BEGIN_SRC sh
+
+docker run -it --net=host -v /dev:/dev --privileged ros:foxy
+
+#+END_SRC
+
+*** Install micro-ROS build system
+
+#+BEGIN_SRC sh
+
+source /opt/ros/$ROS_DISTRO/setup.bash
+mkdir microros_ws
+cd microros_ws
+git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
+sudo apt update && rosdep update
+rosdep install --from-paths src --ignore-src -y
+sudo apt-get install python3-pip
+colcon build
+source install/local_setup.bash
+sudo apt install curl
+
+#+END_SRC
