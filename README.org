@@ -36,17 +36,79 @@ sudo usermod -aG docker $USER
 #+BEGIN_SRC sh
 
 docker pull microros/micro-ros-agent:humble
+docker pull microros/micro_ros_static_library_builder:humble
+
 
 #+END_SRC
 
+* Arduino
+
 ** Arduino IDE
+
+*** Download Arduino IDE 1.8.19
+
+https://www.arduino.cc/en/software
+
+*** Download Teensyduino, install, and patch
 
 #+BEGIN_SRC sh
 
-mkdir -p ~/ArduinoIde
-cd ~/ArduinoIde
-wget -c https://github.com/arduino/Arduino/releases/download/1.8.15/arduino-1.8.15.tar.xz
-tar -xf arduino-1.8.15.tar.xz
+mkdir -p ~/MicroRosArduinoIde && cd "$_"
+mv ~/Downloads/arduino-1.8.19-linux64.tar.xz .
+tar -xf arduino-1.8.19-linux64.tar.xz
+wget -c https://www.pjrc.com/teensy/td_156/TeensyduinoInstall.linux64
+chmod 755 TeensyduinoInstall.linux64
+./TeensyduinoInstall.linux64
+# Select ~/MicroRosArduinoIde/arduino-1.8.19/ to install Teensduino
+# Select None additional libraries to install
+export ARDUINO_PATH=~/MicroRosArduinoIde/arduino-1.8.19
+cd $ARDUINO_PATH/hardware/teensy/avr/
+curl https://raw.githubusercontent.com/micro-ROS/micro_ros_arduino/main/extras/patching_boards/platform_teensy.txt > platform.txt
+
+#+END_SRC
+
+*** Download precompiled micro-ROS library
+
+#+BEGIN_SRC sh
+
+cd ~/MicroRosArduinoIde
+wget -c https://github.com/micro-ROS/micro_ros_arduino/archive/refs/tags/v2.0.5-humble.tar.gz
+rm -rf ~/Arduino/libraries/micro_ros_arduino
+tar -zxf v2.0.5-humble.tar.gz -C ~/Arduino/libraries/
+
+#+END_SRC
+
+
+*** Build precompiled micro-ROS library
+
+#+BEGIN_SRC sh
+
+cd ~/MicroRosArduinoIde
+git clone -b humble git@github.com:micro-ROS/micro_ros_arduino.git
+cd micro_ros_arduino
+docker run -it --rm -v $(pwd):/project --env MICROROS_LIBRARY_FOLDER=extras microros/micro_ros_static_library_builder:humble
+cd ~/Arduino/libraries
+ln -s ~/MicroRosArduinoIde/micro_ros_arduino
+
+#+END_SRC
+
+*** Run Arduino IDE and upload
+
+#+BEGIN_SRC sh
+
+./MicroRosArduinoIde/arduino-1.8.19/arduino
+
+#+END_SRC
+
+- Plug in Teensy 4.0
+- Select Tools:Port:/dev/ttyACM0
+- Navigate to File:Examples:INCOMPATIBLE:micro_ros_arduino:micro-ros_subscriber
+- Upload
+
+** PlatformIO
+
+#+BEGIN_SRC sh
+
 
 #+END_SRC
 
@@ -54,6 +116,26 @@ tar -xf arduino-1.8.15.tar.xz
 
 #+BEGIN_SRC sh
 
-docker run -it --rm -v /dev:/dev --privileged --net=host microros/micro-ros-agent:humble serial --dev teensy4 -v6
+docker run -it --rm -v /dev:/dev --privileged --net=host microros/micro-ros-agent:humble serial --dev /dev/ttyACM0
+
+#+END_SRC
+
+* Test
+
+** Run ROS Container
+
+#+BEGIN_SRC sh
+
+docker run -it --rm --net=host ros:humble
+
+#+END_SRC
+
+** Inside ROS Container
+
+#+BEGIN_SRC sh
+
+ros2 topic list
+ros2 topic pub -1 /micro_ros_arduino_subscriber std_msgs/msg/Int32 "data: 1"
+ros2 topic pub -1 /micro_ros_arduino_subscriber std_msgs/msg/Int32 "data: 0"
 
 #+END_SRC
