@@ -116,7 +116,7 @@ ln -s ~/MicroRosArduinoIde/micro_ros_arduino
 
 #+BEGIN_SRC sh
 
-docker run -it --rm -v /dev:/dev --privileged --net=host microros/micro-ros-agent:humble serial --dev /dev/ttyACM0
+docker run -it --rm -v /dev:/dev --privileged --net=host microros/micro-ros-agent:humble serial --dev /dev/ttyACM0 -v6
 
 #+END_SRC
 
