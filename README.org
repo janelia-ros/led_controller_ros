@@ -109,6 +109,10 @@ ln -s ~/MicroRosArduinoIde/micro_ros_arduino
 
 #+BEGIN_SRC sh
 
+mkdir -p ~/tmp && cd "$_"
+git clone https://github.com/micro-ROS/micro_ros_platformio
+cd micro_ros_platformio/examples/micro-ros_publisher/
+pio run -e teensy40 --target upload
 
 #+END_SRC
 
