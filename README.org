@@ -78,7 +78,6 @@ tar -zxf v2.0.5-humble.tar.gz -C ~/Arduino/libraries/
 
 #+END_SRC
 
-
 *** Build precompiled micro-ROS library
 
 #+BEGIN_SRC sh
@@ -111,7 +110,7 @@ ln -s ~/MicroRosArduinoIde/micro_ros_arduino
 
 mkdir -p ~/tmp && cd "$_"
 git clone https://github.com/micro-ROS/micro_ros_platformio
-cd micro_ros_platformio/examples/micro-ros_publisher/
+cd ~/tmp/micro_ros_platformio/examples/micro-ros_publisher/
 pio run -e teensy40 --target upload
 
 #+END_SRC
