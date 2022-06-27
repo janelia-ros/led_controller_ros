@@ -1,9 +1,0 @@
-FROM ros:foxy
-WORKDIR /microros_ws
-RUN git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
-RUN sudo apt update && rosdep update
-RUN rosdep install --from-paths src --ignore-src -y
-RUN sudo apt-get install python3-pip -y
-RUN /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && colcon build"
-RUN /bin/bash -c "source ./install/setup.bash && ros2 run micro_ros_setup create_agent_ws.sh"
-RUN /bin/bash -c "source ./install/setup.bash && ros2 run micro_ros_setup build_agent.sh"
